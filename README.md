@@ -11,7 +11,7 @@ Behind this Project stand the idea to build a very small solution, to show Julia
 * There are several templates integrated
 
 # Screen Shot (click to visit)
-[![watch](images/screen.jpg)]([https://destination](https://smice-art.github.io/Quaternion-Julia-Fractal/))
+[![watch](images/screen.jpg)](https://smice-art.github.io/Quaternion-Julia-Fractal/)
 
 
 | Object | Preview |
