@@ -10,8 +10,9 @@ Behind this Project stand the idea to build a very small solution, to show Julia
 * you can export a (reduced) 3D obj file
 * There are several templates integrated
 
-# Screen Shot
-![Banner Image](images/screen.jpg)
+# Screen Shot (click to visit)
+[![watch](images/screen.jpg)]([https://destination](https://smice-art.github.io/Quaternion-Julia-Fractal/))
+
 
 | Object | Preview |
 | :--- | :--- |
