@@ -4,7 +4,6 @@
 Behind this Project stand the idea to build a very small solution, to show Julia Fractals on a Web Plattform. As usual with the help og Gemini & co i developed a few Fractal building plattforms. All accessible over my Google Site (https://sites.google.com/view/math-art-projects/fractals/quaternion-fractal-claude)
 
 # Key Features
-
 * You have many slider to adjust multiple fractal parameter.
 * You can easily make a small animation - just by adjusting the start and end values
 * You can export images in several resolutions 1k to 4k
@@ -14,9 +13,7 @@ Behind this Project stand the idea to build a very small solution, to show Julia
 # Screen Shot
 ![Banner Image](images/screen.jpg)
 
-
 | Object | Preview |
 | :--- | :--- |
 | <img src="images/jf_1.png" width="250"> | <img src="images/jf_2.png" width="250"> |
 | <img src="images/jf_3.png" width="250"> | <img src="images/jf_4.png" width="250"> |
-
