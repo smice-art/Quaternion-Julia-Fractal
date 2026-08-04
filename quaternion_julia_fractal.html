@@ -1,0 +1,1000 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smice.Art - Quaternion Julia Fractal</title>
+<style>
+
+/* ── RESET ──────────────────────────────────────────────────────────────── */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  background: #07070f;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, Menlo, monospace;
+  color: #8898b8;
+  overflow: hidden;
+}
+
+/* ── LAYOUT ─────────────────────────────────────────────────────────────── */
+#app {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+canvas {
+  position: absolute;
+  left: 0; top: 0;
+  width: calc(100% - 264px);
+  height: 100%;
+  display: block;
+  cursor: grab;
+}
+canvas:active { cursor: grabbing; }
+
+/* ── PANEL ───────────────────────────────────────────────────────────────── */
+#panel {
+  position: absolute;
+  right: 0; top: 0;
+  width: 320px;
+  height: 100%;
+  background: #0c0c1c;
+  border-left: 1px solid #1c2840;
+  overflow-y: auto;
+  padding: 14px;
+  font-size: 12px;
+}
+#panel::-webkit-scrollbar { width: 4px; }
+#panel::-webkit-scrollbar-track { background: #080810; }
+#panel::-webkit-scrollbar-thumb { background: #1c2840; border-radius: 2px; }
+
+/* ── TYPOGRAPHY ──────────────────────────────────────────────────────────── */
+.title {
+  font-size: 11px;
+  font-weight: 500;
+  color: #6a8ec8;
+  letter-spacing: 3px;
+  margin-bottom: 13px;
+}
+.sec {
+  font-size: 9px;
+  color: #3a4a62;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin: 10px 0 5px;
+}
+.hint {
+  font-size: 10px;
+  color: #3a4a62;
+  line-height: 1.65;
+  margin-bottom: 7px;
+}
+.sep {
+  border: none;
+  border-top: 1px solid #111a2c;
+  margin: 10px 0;
+}
+.footer {
+  font-size: 10px;
+  color: #2a3a52;
+  line-height: 1.8;
+  padding-top: 4px;
+}
+
+/* ── ROWS & LABELS ───────────────────────────────────────────────────────── */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+}
+.lbl {
+  width: 26px;
+  font-size: 10px;
+  color: #7a9ec8;
+  flex-shrink: 0;
+}
+.val {
+  width: 42px;
+  text-align: right;
+  font-size: 10px;
+  color: #4a5a78;
+  flex-shrink: 0;
+}
+
+/* ── RANGE SLIDERS ───────────────────────────────────────────────────────── */
+input[type=range] {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 3px;
+  background: #1a2440;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px;
+  height: 10px;
+  background: #378ADD;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background .15s;
+}
+input[type=range]::-webkit-slider-thumb:hover { background: #5aa0f0; }
+input[type=range]::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  background: #378ADD;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+}
+
+/* ── COLOUR PICKER ───────────────────────────────────────────────────────── */
+input[type=color] {
+  flex: 1;
+  height: 22px;
+  padding: 1px 3px;
+  border: 1px solid #1a2840;
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+}
+
+/* ── PRESET BUTTONS ──────────────────────────────────────────────────────── */
+.presets {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+.pbtn {
+  background: #080f1e;
+  border: 1px solid #1a2840;
+  color: #7a9ec8;
+  padding: 6px 4px;
+  font: 10px/1.4 inherit;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: center;
+  transition: background .15s;
+}
+.pbtn:hover { background: #0e1a30; }
+
+/* ── SELECTS ─────────────────────────────────────────────────────────────── */
+select {
+  width: 100%;
+  padding: 6px 7px;
+  background: #080f1e;
+  color: #7a9ec8;
+  border: 1px solid #1a2840;
+  font: 11px inherit;
+  border-radius: 5px;
+  margin-bottom: 5px;
+  outline: none;
+  cursor: pointer;
+}
+select:focus { border-color: #378ADD; }
+
+/* ── ACTION BUTTONS ──────────────────────────────────────────────────────── */
+.ebtn {
+  width: 100%;
+  padding: 7px;
+  background: #070e1c;
+  color: #378ADD;
+  border: 1px solid #1a3060;
+  font: 12px inherit;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-bottom: 3px;
+  transition: filter .15s;
+}
+.ebtn:hover:not(:disabled) { filter: brightness(1.3); }
+.ebtn:disabled { opacity: .4; cursor: default; }
+
+/* ── PROGRESS ────────────────────────────────────────────────────────────── */
+#pbar {
+  height: 2px;
+  background: #080f1e;
+  border-radius: 2px;
+  margin-top: 7px;
+}
+#pfill {
+  height: 100%;
+  background: #378ADD;
+  border-radius: 2px;
+  width: 0;
+  transition: width .15s;
+}
+#pstat {
+  font-size: 10px;
+  color: #3a4a62;
+  margin-top: 4px;
+  min-height: 14px;
+}
+
+/* ── ANIMATION LANES ─────────────────────────────────────────────────────── */
+.arow {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-bottom: 3px;
+}
+.apsel {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 3px;
+  background: #080f1e;
+  color: #7a9ec8;
+  border: 1px solid #1a2840;
+  font: 9px inherit;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+.anum {
+  width: 50px;
+  padding: 2px 3px;
+  background: #080f1e;
+  color: #7a9ec8;
+  border: 1px solid #1a2840;
+  font: 9px inherit;
+  border-radius: 3px;
+  outline: none;
+  text-align: center;
+}
+.anum:focus, .apsel:focus { border-color: #378ADD; }
+
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <canvas id="c"></canvas>
+
+  <div id="panel">
+
+    <div class="title">⬡ QUATERNION JULIA</div>
+
+    <!-- ── CONSTANT C ──────────────────────────────────────────────────── -->
+    <div class="sec">constant c</div>
+    <div class="row"><span class="lbl">R</span><input type="range" id="cr" min="-1" max="1" step="0.001" value="-0.2"><span class="val" id="vcr">-0.200</span></div>
+    <div class="row"><span class="lbl">I</span><input type="range" id="ci" min="-1" max="1" step="0.001" value="0.4"><span class="val" id="vci">0.400</span></div>
+    <div class="row"><span class="lbl">J</span><input type="range" id="cj" min="-1" max="1" step="0.001" value="0"><span class="val" id="vcj">0.000</span></div>
+    <div class="row"><span class="lbl">K</span><input type="range" id="ck" min="-1" max="1" step="0.001" value="0"><span class="val" id="vck">0.000</span></div>
+
+    <!-- ── 4D SLICE + VIEW ─────────────────────────────────────────────── -->
+    <div class="sec">4d slice + view</div>
+    <div class="row"><span class="lbl">W</span><input type="range" id="ws" min="-1" max="1" step="0.001" value="0"><span class="val" id="vws">0.000</span></div>
+    <div class="row"><span class="lbl">Itr</span><input type="range" id="it" min="4" max="48" step="1" value="20"><span class="val" id="vit">20</span></div>
+    <div class="row"><span class="lbl">Esc</span><input type="range" id="es" min="2" max="12" step="0.1" value="4"><span class="val" id="ves">4.0</span></div>
+    <div class="row"><span class="lbl">Zm</span><input type="range" id="zm" min="2" max="8" step="0.05" value="3.5"><span class="val" id="vzm">3.50</span></div>
+
+    <!-- ── COLORS ──────────────────────────────────────────────────────── -->
+    <div class="sec">colors</div>
+    <div class="row"><span class="lbl">Bg</span><input type="color" id="bgcol" value="#0a0a14"></div>
+    <div class="row"><span class="lbl">Hue</span><input type="range" id="hue" min="-1" max="1" step="0.01" value="0"><span class="val" id="vhue">0.00</span></div>
+
+    <!-- ── LIGHT ───────────────────────────────────────────────────────── -->
+    <div class="sec">light direction</div>
+    <div class="row"><span class="lbl">Az</span><input type="range" id="laz" min="-3.14" max="3.14" step="0.01" value="0.6"><span class="val" id="vlaz">0.60</span></div>
+    <div class="row"><span class="lbl">El</span><input type="range" id="lel" min="-1.5" max="1.5" step="0.01" value="0.85"><span class="val" id="vlel">0.85</span></div>
+
+    <!-- ── DEPTH OF FIELD ──────────────────────────────────────────────── -->
+    <div class="sec">depth of field</div>
+    <div class="hint">Set Blur &gt; 0 to enable. Slide Foc until the fractal is sharp.</div>
+    <div class="row"><span class="lbl">Foc</span><input type="range" id="dfoc" min="0.3" max="5" step="0.05" value="2"><span class="val" id="vdfoc">2.00</span></div>
+    <div class="row"><span class="lbl">Blur</span><input type="range" id="dblr" min="0" max="15" step="0.1" value="0"><span class="val" id="vdblr">0.0</span></div>
+
+    <!-- ── ANIMATION ───────────────────────────────────────────────────── -->
+    <div class="sec">animation</div>
+    <div class="hint">4 lanes · smooth sine loop · auto ¼-phase stagger between lanes.</div>
+    <div class="row"><span class="lbl">Spd</span><input type="range" id="aspd" min="0.02" max="1.0" step="0.01" value="0.2"><span class="val" id="vaspd">0.20</span></div>
+    <div id="lanes"></div>
+    <button id="playBtn" onclick="toggleAnim()" class="ebtn" style="margin-top:4px;">▶  Play</button>
+
+    <!-- ── PRESETS ─────────────────────────────────────────────────────── -->
+    <div class="sep"></div>
+    <div class="sec">presets (bourke)</div>
+    <div class="presets">
+      <button class="pbtn" onclick="ap(-0.2,0.4,0,0)">Classic<br>−.2  .4  0  0</button>
+      <button class="pbtn" onclick="ap(-0.291,-0.399,0.339,0.437)">Type B<br>−.29 −.40</button>
+      <button class="pbtn" onclick="ap(-0.2,-0.4,-0.4,-0.4)">Type C<br>−.2 −.4 −.4</button>
+      <button class="pbtn" onclick="ap(0.185,0.478,0.125,0.392)">Type D<br>.19  .48  .13</button>
+      <button class="pbtn" onclick="ap(-0.2,0.6,0.2,0.2)">Type E<br>−.2  .6  .2</button>
+      <button class="pbtn" onclick="ap(-0.213,-0.041,-0.563,-0.56)">Type F<br>−.21 −.04</button>
+    </div>
+
+    <!-- ── OBJ EXPORT ──────────────────────────────────────────────────── -->
+    <div class="sep"></div>
+    <div class="sec">OBJ mesh export</div>
+    <div class="hint">Marching tetrahedra via Hart DE.<br>Blender: Recalculate Normals → Shade Smooth.</div>
+    <select id="res">
+      <option value="48">48³  fast   ~2s</option>
+      <option value="64" selected>64³  good   ~6s</option>
+      <option value="80">80³  fine  ~14s</option>
+      <option value="96">96³  dense ~28s</option>
+    </select>
+    <button class="ebtn" id="exportBtn" onclick="startExport()">⬇  Export .obj</button>
+    <div id="pbar"><div id="pfill"></div></div>
+    <div id="pstat"></div>
+
+    <!-- ── PNG + NORMAL MAP ────────────────────────────────────────────── -->
+    <div class="sep"></div>
+    <div class="sec">PNG + Normal Map export</div>
+    <div class="hint">Colour PNG includes DOF. Normal map exports world-space normals (classic purple).</div>
+    <select id="imgres">
+      <option value="1024">1K  (1024 × 1024)</option>
+      <option value="2048" selected>2K  (2048 × 2048)</option>
+      <option value="4096">4K  (4096 × 4096)</option>
+      <option value="8192">8K  (8192 × 8192)  ★</option>
+    </select>
+    <button class="ebtn" onclick="exportImage()">⬇  Color PNG</button>
+    <button class="ebtn" onclick="exportNormalMap()">⬇  Normal Map PNG</button>
+
+    <!-- ── FOOTER ──────────────────────────────────────────────────────── -->
+    <div class="sep"></div>
+    <div class="footer">
+      Drag to orbit · Scroll to zoom<br>
+      Hart Distance Estimator · WebGL2<br>
+      Marching Tetrahedra · OBJ + PNG + Normal Map<br>
+      Animation Lanes · Depth of Field
+    </div>
+
+  </div><!-- #panel -->
+
+</div><!-- #app -->
+
+<script>
+'use strict';
+
+// ── STATE ────────────────────────────────────────────────────────────────
+const P = {
+  cr: -0.2, ci: 0.4, cj: 0, ck: 0,
+  ws: 0, iter: 20, esc: 4, zoom: 3.5,
+  hue: 0, bgcol: [0.039, 0.039, 0.078],
+  laz: 0.6, lel: 0.85,
+  dofFocus: 2.0, dofBlur: 0
+};
+let yaw = 0.4, pitch = 0.25, drag = false, lx = 0, ly = 0;
+
+// ── ANIMATION ────────────────────────────────────────────────────────────
+const PARAM_OPTS = [
+  ['ws','W'], ['hue','Hue'], ['laz','LtAz'], ['lel','LtEl'],
+  ['cr','CR'], ['ci','CI'], ['cj','CJ'], ['ck','CK'],
+  ['zoom','Zoom'], ['dofFocus','DOFFoc'], ['dofBlur','DOFBlur']
+];
+
+const LANE_DEF = [
+  { en: true,  p: 'ws',  f: -0.8, t:  0.8 },
+  { en: true,  p: 'hue', f: -0.5, t:  0.5 },
+  { en: false, p: 'laz', f: -1.5, t:  1.5 },
+  { en: false, p: 'cr',  f: -0.4, t:  0.0 }
+];
+
+const P2S = {
+  cr:       { s: 'cr',   v: 'vcr'   },
+  ci:       { s: 'ci',   v: 'vci'   },
+  cj:       { s: 'cj',   v: 'vcj'   },
+  ck:       { s: 'ck',   v: 'vck'   },
+  ws:       { s: 'ws',   v: 'vws'   },
+  hue:      { s: 'hue',  v: 'vhue'  },
+  zoom:     { s: 'zm',   v: 'vzm'   },
+  laz:      { s: 'laz',  v: 'vlaz'  },
+  lel:      { s: 'lel',  v: 'vlel'  },
+  dofFocus: { s: 'dfoc', v: 'vdfoc' },
+  dofBlur:  { s: 'dblr', v: 'vdblr' }
+};
+
+let animPlaying = false, animT0 = 0;
+
+// Build lane rows dynamically
+(function buildLanes() {
+  const container = document.getElementById('lanes');
+  LANE_DEF.forEach((lane, i) => {
+    const opts = PARAM_OPTS
+      .map(([v, l]) => `<option value="${v}"${v === lane.p ? ' selected' : ''}>${l}</option>`)
+      .join('');
+    container.innerHTML +=
+      `<div class="arow">` +
+        `<input type="checkbox" id="aen${i}"${lane.en ? ' checked' : ''} onchange="syncLane(${i})" style="cursor:pointer;flex-shrink:0">` +
+        `<select id="ap${i}" class="apsel" onchange="syncLane(${i})">${opts}</select>` +
+        `<input type="number" id="af${i}" class="anum" value="${lane.f}" step="0.05" onchange="syncLane(${i})">` +
+        `<span style="color:#3a4a62;font-size:9px;flex-shrink:0">→</span>` +
+        `<input type="number" id="at${i}" class="anum" value="${lane.t}" step="0.05" onchange="syncLane(${i})">` +
+      `</div>`;
+  });
+})();
+
+function syncLane(i) {
+  LANE_DEF[i].en = document.getElementById('aen' + i).checked;
+  LANE_DEF[i].p  = document.getElementById('ap'  + i).value;
+  LANE_DEF[i].f  = parseFloat(document.getElementById('af' + i).value) || 0;
+  LANE_DEF[i].t  = parseFloat(document.getElementById('at' + i).value) || 0;
+}
+
+function tickAnim(now) {
+  if (!animPlaying) return;
+  const spd = parseFloat(document.getElementById('aspd').value);
+  const t   = (now - animT0) / 1000 * spd;
+  LANE_DEF.forEach((lane, i) => {
+    if (!lane.en) return;
+    const wave = 0.5 - 0.5 * Math.cos((t + i * 0.25) * Math.PI * 2); // ¼-phase stagger
+    const val  = lane.f + wave * (lane.t - lane.f);
+    P[lane.p]  = val;
+    const m = P2S[lane.p];
+    if (!m) return;
+    const sl = document.getElementById(m.s); if (sl) sl.value = val;
+    const ve = document.getElementById(m.v); if (ve) ve.textContent = val.toFixed(2);
+  });
+}
+
+function toggleAnim() {
+  animPlaying = !animPlaying;
+  const btn = document.getElementById('playBtn');
+  if (animPlaying) {
+    animT0 = performance.now();
+    btn.textContent  = '■  Stop';
+    btn.style.color  = '#f87';
+  } else {
+    btn.textContent  = '▶  Play';
+    btn.style.color  = '#378ADD';
+  }
+}
+
+// ── HELPERS ──────────────────────────────────────────────────────────────
+function hexToRgb(h) {
+  return [
+    parseInt(h.slice(1, 3), 16) / 255,
+    parseInt(h.slice(3, 5), 16) / 255,
+    parseInt(h.slice(5, 7), 16) / 255
+  ];
+}
+
+function qm(ar, ai, aj, ak, br, bi, bj, bk) {
+  return [
+    ar*br - ai*bi - aj*bj - ak*bk,
+    ar*bi + ai*br + aj*bk - ak*bj,
+    ar*bj - ai*bk + aj*br + ak*bi,
+    ar*bk + ai*bj - aj*bi + ak*br
+  ];
+}
+
+function jde(x, y, z) {
+  let qr = x, qi = y, qj = z, qk = P.ws;
+  let dr = 1, di = 0, dj = 0, dk = 0;
+  const e2 = P.esc * P.esc, it = Math.round(P.iter);
+  for (let n = 0; n < it; n++) {
+    const [nr, ni, nj, nk] = qm(qr, qi, qj, qk, dr, di, dj, dk);
+    dr = 2*nr; di = 2*ni; dj = 2*nj; dk = 2*nk;
+    const [zr, zi, zj, zk] = qm(qr, qi, qj, qk, qr, qi, qj, qk);
+    qr = zr + P.cr; qi = zi + P.ci; qj = zj + P.cj; qk = zk + P.ck;
+    const r2 = qr*qr + qi*qi + qj*qj + qk*qk;
+    if (r2 > e2) {
+      const r  = Math.sqrt(r2);
+      const dl = Math.sqrt(dr*dr + di*di + dj*dj + dk*dk);
+      return dl > 0 ? 0.5 * r * Math.log(r) / dl : r;
+    }
+  }
+  return Math.sqrt(qr*qr + qi*qi + qj*qj + qk*qk) - P.esc;
+}
+
+// ── MARCHING TETRAHEDRA ───────────────────────────────────────────────────
+const TETS = [[0,1,2,6],[0,2,3,6],[0,3,7,6],[0,7,4,6],[0,4,5,6],[0,5,1,6]];
+const OFF  = [[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]];
+
+function mtet(va, vb, vc, vd, fa, fb, fc, fd, T) {
+  const m = (fa<0?1:0)|(fb<0?2:0)|(fc<0?4:0)|(fd<0?8:0);
+  if (m === 0 || m === 15) return;
+  const V = [va, vb, vc, vd], F = [fa, fb, fc, fd];
+  const e = (i, j) => {
+    const t = F[i] / (F[i] - F[j]);
+    return [V[i][0]+t*(V[j][0]-V[i][0]), V[i][1]+t*(V[j][1]-V[i][1]), V[i][2]+t*(V[j][2]-V[i][2])];
+  };
+  switch (m) {
+    case  1: T.push([e(0,1),e(0,2),e(0,3)]); break;
+    case  2: T.push([e(1,0),e(1,3),e(1,2)]); break;
+    case  4: T.push([e(2,0),e(2,1),e(2,3)]); break;
+    case  8: T.push([e(3,0),e(3,2),e(3,1)]); break;
+    case 14: T.push([e(0,1),e(0,3),e(0,2)]); break;
+    case 13: T.push([e(1,0),e(1,2),e(1,3)]); break;
+    case 11: T.push([e(2,0),e(2,3),e(2,1)]); break;
+    case  7: T.push([e(3,0),e(3,1),e(3,2)]); break;
+    case  3: T.push([e(0,2),e(1,2),e(1,3)], [e(0,2),e(1,3),e(0,3)]); break;
+    case 12: T.push([e(0,2),e(0,3),e(1,3)], [e(0,2),e(1,3),e(1,2)]); break;
+    case  5: T.push([e(0,1),e(2,3),e(2,1)], [e(0,1),e(0,3),e(2,3)]); break;
+    case 10: T.push([e(0,1),e(2,1),e(2,3)], [e(0,1),e(2,3),e(0,3)]); break;
+    case  9: T.push([e(0,1),e(3,2),e(3,1)], [e(0,1),e(0,2),e(3,2)]); break;
+    case  6: T.push([e(0,1),e(3,1),e(3,2)], [e(0,1),e(3,2),e(0,2)]); break;
+  }
+}
+
+// ── OBJ EXPORT ───────────────────────────────────────────────────────────
+async function startExport() {
+  const btn = document.getElementById('exportBtn');
+  const pf  = document.getElementById('pfill');
+  const ps  = document.getElementById('pstat');
+  btn.disabled = true;
+
+  const res  = parseInt(document.getElementById('res').value);
+  const half = P.esc * 0.72, step = half * 2 / res, orig = -half, N = res + 1;
+  const yd   = () => new Promise(r => setTimeout(r, 0));
+  const sp   = (pct, msg) => { pf.style.width = pct + '%'; ps.textContent = msg; };
+
+  sp(0, 'Allocating SDF grid…'); await yd();
+  const grid = new Float32Array(N * N * N);
+  for (let ix = 0; ix < N; ix++) {
+    if (ix % 4 === 0) { sp(Math.round(ix / N * 55), 'Sampling SDF ' + Math.round(ix / N * 100) + '%…'); await yd(); }
+    for (let iy = 0; iy < N; iy++)
+      for (let iz = 0; iz < N; iz++)
+        grid[ix*N*N + iy*N + iz] = jde(orig + ix*step, orig + iy*step, orig + iz*step);
+  }
+
+  sp(55, 'Building mesh…'); await yd();
+  const tris = [];
+  for (let ix = 0; ix < res; ix++) {
+    if (ix % 4 === 0) { sp(55 + Math.round(ix / res * 35), 'Building mesh ' + Math.round(ix / res * 100) + '%…'); await yd(); }
+    for (let iy = 0; iy < res; iy++) {
+      for (let iz = 0; iz < res; iz++) {
+        const f = OFF.map(([ox,oy,oz]) => grid[(ix+ox)*N*N + (iy+oy)*N + (iz+oz)]);
+        const p = OFF.map(([ox,oy,oz]) => [orig+(ix+ox)*step, orig+(iy+oy)*step, orig+(iz+oz)*step]);
+        for (const [a,b,c,d] of TETS) mtet(p[a], p[b], p[c], p[d], f[a], f[b], f[c], f[d], tris);
+      }
+    }
+  }
+
+  sp(90, 'Writing OBJ file…'); await yd();
+  const vL = [], nL = [], fL = []; let vi = 1;
+  for (const [p0, p1, p2] of tris) {
+    const ax = p1[0]-p0[0], ay = p1[1]-p0[1], az = p1[2]-p0[2];
+    const bx = p2[0]-p0[0], by = p2[1]-p0[1], bz = p2[2]-p0[2];
+    let nx = ay*bz - az*by, ny = az*bx - ax*bz, nz = ax*by - ay*bx;
+    const nl = Math.sqrt(nx*nx + ny*ny + nz*nz) || 1;
+    nx /= nl; ny /= nl; nz /= nl;
+    vL.push(`v ${p0[0].toFixed(5)} ${p0[1].toFixed(5)} ${p0[2].toFixed(5)}`);
+    vL.push(`v ${p1[0].toFixed(5)} ${p1[1].toFixed(5)} ${p1[2].toFixed(5)}`);
+    vL.push(`v ${p2[0].toFixed(5)} ${p2[1].toFixed(5)} ${p2[2].toFixed(5)}`);
+    const ni = nL.length + 1;
+    nL.push(`vn ${nx.toFixed(5)} ${ny.toFixed(5)} ${nz.toFixed(5)}`);
+    fL.push(`f ${vi}//${ni} ${vi+1}//${ni} ${vi+2}//${ni}`);
+    vi += 3;
+  }
+
+  sp(96, 'Generating download…'); await yd();
+  const obj = [
+    '# Quaternion Julia Set — Hart Distance Estimator + Marching Tetrahedra',
+    `# C = ( ${P.cr}, ${P.ci}, ${P.cj}, ${P.ck} )   W = ${P.ws}   iter = ${Math.round(P.iter)}   esc = ${P.esc}`,
+    `# Triangles: ${tris.length}   Resolution: ${res}`,
+    '# Blender: select all → Mesh > Normals > Recalculate Outside → right-click → Shade Smooth',
+    'o QuaternionJulia',
+    ...vL, ...nL, 's 0', ...fL
+  ].join('\n');
+
+  const a = document.createElement('a');
+  a.href     = URL.createObjectURL(new Blob([obj], { type: 'text/plain' }));
+  a.download = `qjulia_${P.cr}_${P.ci}_${P.cj}_${P.ck}.obj`;
+  a.click();
+  sp(100, `Done — ${tris.length.toLocaleString()} triangles exported.`);
+  btn.disabled = false;
+}
+
+// ── WEBGL SHADERS ────────────────────────────────────────────────────────
+const VS = `#version 300 es
+layout(location = 0) in vec2 a;
+void main() { gl_Position = vec4(a, 0.0, 1.0); }`;
+
+// Scene shader — uMode 0 = colour, 1 = world-space normal map
+const SCENE_FS = `#version 300 es
+precision highp float;
+
+uniform vec2  uR;
+uniform vec4  uC;
+uniform float uW, uE, uZ, uHue, uLAz, uLEl;
+uniform int   uI, uMode;
+uniform mat3  uM;
+uniform vec3  uBg;
+out vec4 O;
+
+vec4 qm(vec4 a, vec4 b) {
+  return vec4(
+    a.x*b.x - a.y*b.y - a.z*b.z - a.w*b.w,
+    a.x*b.y + a.y*b.x + a.z*b.w - a.w*b.z,
+    a.x*b.z - a.y*b.w + a.z*b.x + a.w*b.y,
+    a.x*b.w + a.y*b.z - a.z*b.y + a.w*b.x
+  );
+}
+
+float de(vec3 pos) {
+  vec4  z  = vec4(pos, uW);
+  vec4  dz = vec4(1.0, 0.0, 0.0, 0.0);
+  float r2 = 0.0, e2 = uE * uE;
+  for (int i = 0; i < 64; i++) {
+    if (i >= uI) break;
+    dz = 2.0 * qm(z, dz);
+    z  = qm(z, z) + uC;
+    r2 = dot(z, z);
+    if (r2 > e2) {
+      float r  = sqrt(r2);
+      float dl = length(dz);
+      return dl > 0.0 ? 0.5 * r * log(r) / dl : r;
+    }
+  }
+  return sqrt(r2) - uE;  // negative inside the set
+}
+
+vec3 nn(vec3 p) {
+  const float e = 0.002;
+  return normalize(vec3(
+    de(p + vec3(e, 0, 0)) - de(p - vec3(e, 0, 0)),
+    de(p + vec3(0, e, 0)) - de(p - vec3(0, e, 0)),
+    de(p + vec3(0, 0, e)) - de(p - vec3(0, 0, e))
+  ));
+}
+
+void main() {
+  vec2 uv = (gl_FragCoord.xy - 0.5 * uR) / min(uR.x, uR.y);
+  vec3 ro  = uM * vec3(0.0, 0.0, uZ);
+  vec3 rd  = normalize(uM * vec3(uv, -1.5));
+
+  float t = 0.05, hit = -1.0;
+  for (int i = 0; i < 300; i++) {
+    float d = de(ro + t * rd);
+    if (d < 0.0003) { hit = t; break; }
+    if (t > uZ * 2.2) break;
+    t += max(d, 0.0003);
+  }
+
+  // Background
+  if (hit < 0.0) {
+    O = (uMode == 1) ? vec4(0.5, 0.5, 1.0, 1.0) : vec4(uBg, 1.0);
+    return;
+  }
+
+  vec3 p = ro + hit * rd;
+  vec3 n = nn(p);
+  if (dot(n, -rd) < 0.0) n = -n;
+
+  // Normal map mode: encode world-space normals as RGB
+  if (uMode == 1) { O = vec4(n * 0.5 + 0.5, 1.0); return; }
+
+  // Colour mode: two-light phong + AO + cosine palette
+  vec3  l1  = normalize(vec3(cos(uLEl)*sin(uLAz), sin(uLEl), cos(uLEl)*cos(uLAz)));
+  float az2 = uLAz + 3.14159;
+  float el2 = -uLEl * 0.5 - 0.3;
+  vec3  l2  = normalize(vec3(cos(el2)*sin(az2), sin(el2), cos(el2)*cos(az2)));
+
+  float d1 = max(dot(n, l1), 0.0);
+  float d2 = max(dot(n, l2), 0.0) * 0.25;
+  float sp = pow(max(dot(reflect(-l1, n), -rd), 0.0), 64.0);
+
+  float ao = 0.0;
+  for (int i = 1; i <= 5; i++) {
+    float f = float(i);
+    ao += (f * 0.05 - de(p + n * f * 0.05)) / f;
+  }
+  ao = clamp(1.0 - 2.2 * ao, 0.0, 1.0);
+
+  vec3 col = 0.5 + 0.5 * cos(6.283 * (vec3(0.0, 0.33, 0.67) + length(p)*0.7 + uW*0.5 + uHue));
+  col = col * (0.06 + (d1 + d2) * ao) + vec3(0.9) * sp * ao;
+
+  // Store normalised hit-distance in alpha — read by the DOF pass
+  O = vec4(pow(clamp(col, 0.0, 1.0), vec3(0.4545)), hit / (uZ * 2.2));
+}`;
+
+// DOF pass — golden-angle spiral bokeh blur
+const DOF_FS = `#version 300 es
+precision highp float;
+
+uniform sampler2D uTex;
+uniform vec2  uRes;
+uniform float uFocus, uBlur, uMaxD;
+out vec4 O;
+
+void main() {
+  vec2 uv   = gl_FragCoord.xy / uRes;
+  vec4 c    = texture(uTex, uv);
+  float coc = min(abs(c.a * uMaxD - uFocus) * uBlur, 22.0);
+
+  if (coc < 0.5) { O = vec4(c.rgb, 1.0); return; }
+
+  vec3  col = c.rgb;
+  float w   = 1.0;
+  vec2  tx  = 1.0 / uRes;
+
+  for (int i = 0; i < 24; i++) {                      // 24-sample golden-angle spiral
+    float ang = float(i) * 2.39996;                    // ≈ golden angle in radians
+    float rad = sqrt(float(i + 1) / 24.0) * coc;
+    col += texture(uTex, uv + vec2(cos(ang), sin(ang)) * rad * tx).rgb;
+    w   += 1.0;
+  }
+  O = vec4(col / w, 1.0);
+}`;
+
+// ── WEBGL INITIALISATION ─────────────────────────────────────────────────
+const cv = document.getElementById('c');
+const gl = cv.getContext('webgl2', { preserveDrawingBuffer: true, alpha: false });
+
+if (!gl) {
+  document.body.innerHTML = '<p style="color:#f88;padding:40px;font-family:monospace;font-size:18px">WebGL2 is required but not available in this browser.</p>';
+}
+
+function buildProg(vsSrc, fsSrc) {
+  const prog = gl.createProgram();
+  [[gl.VERTEX_SHADER, vsSrc], [gl.FRAGMENT_SHADER, fsSrc]].forEach(([type, src]) => {
+    const sh = gl.createShader(type);
+    gl.shaderSource(sh, src);
+    gl.compileShader(sh);
+    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS))
+      console.error('Shader compile error:', gl.getShaderInfoLog(sh));
+    gl.attachShader(prog, sh);
+  });
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS))
+    console.error('Program link error:', gl.getProgramInfoLog(prog));
+  return prog;
+}
+
+const scenePg = buildProg(VS, SCENE_FS);
+const dofPg   = buildProg(VS, DOF_FS);
+
+// Single VAO — both programs use layout(location=0) for attribute a
+const vao = gl.createVertexArray();
+gl.bindVertexArray(vao);
+const vbuf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, vbuf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
+gl.enableVertexAttribArray(0);
+gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+gl.bindVertexArray(null);
+
+// FBO — scene renders here so the DOF pass can read depth from alpha
+const fbo    = gl.createFramebuffer();
+const fboTex = gl.createTexture();
+let fboW = 0, fboH = 0;
+
+function ensureFBO(w, h) {
+  if (fboW === w && fboH === h) return;
+  gl.bindTexture(gl.TEXTURE_2D, fboTex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, fboTex, 0);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  fboW = w; fboH = h;
+}
+
+// Uniform locations
+const sU = {
+  R:  gl.getUniformLocation(scenePg, 'uR'),
+  C:  gl.getUniformLocation(scenePg, 'uC'),
+  W:  gl.getUniformLocation(scenePg, 'uW'),
+  E:  gl.getUniformLocation(scenePg, 'uE'),
+  Z:  gl.getUniformLocation(scenePg, 'uZ'),
+  I:  gl.getUniformLocation(scenePg, 'uI'),
+  Mo: gl.getUniformLocation(scenePg, 'uMode'),
+  M:  gl.getUniformLocation(scenePg, 'uM'),
+  Hu: gl.getUniformLocation(scenePg, 'uHue'),
+  Bg: gl.getUniformLocation(scenePg, 'uBg'),
+  LA: gl.getUniformLocation(scenePg, 'uLAz'),
+  LE: gl.getUniformLocation(scenePg, 'uLEl')
+};
+
+const dU = {
+  Tex: gl.getUniformLocation(dofPg, 'uTex'),
+  Res: gl.getUniformLocation(dofPg, 'uRes'),
+  Foc: gl.getUniformLocation(dofPg, 'uFocus'),
+  Bl:  gl.getUniformLocation(dofPg, 'uBlur'),
+  MD:  gl.getUniformLocation(dofPg, 'uMaxD')
+};
+
+function rm() {
+  const cy = Math.cos(yaw), sy = Math.sin(yaw);
+  const cp = Math.cos(pitch), sp = Math.sin(pitch);
+  // Column-major rotation matrix for gl.uniformMatrix3fv
+  return new Float32Array([
+     cy,    0,   -sy,
+     sy*sp, cp,   cy*sp,
+     sy*cp, -sp,  cy*cp
+  ]);
+}
+
+function setScene(w, h, mode = 0) {
+  gl.useProgram(scenePg);
+  gl.uniform2f(sU.R,  w, h);
+  gl.uniform4f(sU.C,  P.cr, P.ci, P.cj, P.ck);
+  gl.uniform1f(sU.W,  P.ws);
+  gl.uniform1f(sU.E,  P.esc);
+  gl.uniform1f(sU.Z,  P.zoom);
+  gl.uniform1i(sU.I,  Math.round(P.iter));
+  gl.uniform1i(sU.Mo, mode);
+  gl.uniformMatrix3fv(sU.M, false, rm());
+  gl.uniform1f(sU.Hu, P.hue);
+  gl.uniform3f(sU.Bg, ...P.bgcol);
+  gl.uniform1f(sU.LA, P.laz);
+  gl.uniform1f(sU.LE, P.lel);
+}
+
+function setDof(w, h) {
+  gl.useProgram(dofPg);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, fboTex);
+  gl.uniform1i(dU.Tex, 0);
+  gl.uniform2f(dU.Res, w, h);
+  gl.uniform1f(dU.Foc, P.dofFocus);
+  gl.uniform1f(dU.Bl,  P.dofBlur);
+  gl.uniform1f(dU.MD,  P.zoom * 2.2);
+}
+
+// ── RENDER LOOP ───────────────────────────────────────────────────────────
+let W = 0, H = 0;
+
+function rsz() {
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if (w === W && h === H) return;
+  cv.width = W = w; cv.height = H = h;
+  gl.viewport(0, 0, w, h);
+}
+
+(function loop(now = performance.now()) {
+  tickAnim(now);
+  rsz();
+  gl.bindVertexArray(vao);
+
+  if (P.dofBlur >= 0.1) {
+    // Pass 1: scene → FBO (depth stored in alpha channel)
+    ensureFBO(W, H);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+    setScene(W, H, 0);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+    // Pass 2: bokeh DOF blur → screen
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    setDof(W, H);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+  } else {
+    // Single pass direct render (no FBO overhead)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    setScene(W, H, 0);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+  }
+
+  requestAnimationFrame(loop);
+})();
+
+// ── EXPORT FUNCTIONS ──────────────────────────────────────────────────────
+function getExportSize() {
+  const md = gl.getParameter(gl.MAX_VIEWPORT_DIMS);
+  let sz   = parseInt(document.getElementById('imgres').value);
+  if (sz > md[0] || sz > md[1]) {
+    sz = Math.min(md[0], md[1]);
+    document.getElementById('pstat').textContent = `GPU max is ${md[0]}px — exporting at ${sz}px`;
+  }
+  return sz;
+}
+
+function doRender(sz, mode) {
+  cv.width = sz; cv.height = sz;
+  gl.viewport(0, 0, sz, sz);
+  gl.bindVertexArray(vao);
+
+  if (mode === 0 && P.dofBlur >= 0.1) {
+    // Resize FBO texture to match export size
+    gl.bindTexture(gl.TEXTURE_2D, fboTex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, sz, sz, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    fboW = sz; fboH = sz;
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+    setScene(sz, sz, 0);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    setDof(sz, sz);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+  } else {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    setScene(sz, sz, mode);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+  }
+}
+
+function exportImage() {
+  const sz = getExportSize(), sw = W, sh = H;
+  doRender(sz, 0);
+  const a = document.createElement('a');
+  a.href     = cv.toDataURL('image/png');
+  a.download = `qjulia_${P.cr}_${P.ci}_${P.cj}_${P.ck}_${sz}px.png`;
+  a.click();
+  cv.width = sw; cv.height = sh;
+  gl.viewport(0, 0, sw, sh);
+  fboW = 0; fboH = 0;
+}
+
+function exportNormalMap() {
+  const sz = getExportSize(), sw = W, sh = H;
+  doRender(sz, 1);   // mode 1 → world-space normals as RGB (the purple look)
+  const a = document.createElement('a');
+  a.href     = cv.toDataURL('image/png');
+  a.download = `qjulia_${P.cr}_${P.ci}_${P.cj}_${P.ck}_normalmap_${sz}px.png`;
+  a.click();
+  cv.width = sw; cv.height = sh;
+  gl.viewport(0, 0, sw, sh);
+}
+
+// ── MOUSE / TOUCH ORBIT ───────────────────────────────────────────────────
+cv.addEventListener('mousedown', e => { drag = true; lx = e.clientX; ly = e.clientY; });
+window.addEventListener('mouseup',  () => drag = false);
+window.addEventListener('mousemove', e => {
+  if (!drag) return;
+  yaw   += (e.clientX - lx) * 0.006;
+  pitch  = Math.max(-1.4, Math.min(1.4, pitch + (e.clientY - ly) * 0.006));
+  lx = e.clientX; ly = e.clientY;
+});
+cv.addEventListener('wheel', e => {
+  e.preventDefault();
+  P.zoom = Math.max(1.5, Math.min(10, P.zoom + e.deltaY * 0.004));
+}, { passive: false });
+cv.addEventListener('touchstart', e => { drag = true; lx = e.touches[0].clientX; ly = e.touches[0].clientY; }, { passive: true });
+window.addEventListener('touchend',  () => drag = false);
+window.addEventListener('touchmove', e => {
+  if (!drag) return;
+  yaw   += (e.touches[0].clientX - lx) * 0.006;
+  pitch  = Math.max(-1.4, Math.min(1.4, pitch + (e.touches[0].clientY - ly) * 0.006));
+  lx = e.touches[0].clientX; ly = e.touches[0].clientY;
+}, { passive: true });
+
+// ── SLIDER CONTROLS ───────────────────────────────────────────────────────
+document.getElementById('bgcol').addEventListener('input', e => {
+  P.bgcol = hexToRgb(e.target.value);
+});
+
+document.getElementById('aspd').addEventListener('input', function () {
+  document.getElementById('vaspd').textContent = parseFloat(this.value).toFixed(2);
+});
+
+const SLIDERS = [
+  ['cr',   'vcr',   v => P.cr       = v         ],
+  ['ci',   'vci',   v => P.ci       = v         ],
+  ['cj',   'vcj',   v => P.cj       = v         ],
+  ['ck',   'vck',   v => P.ck       = v         ],
+  ['ws',   'vws',   v => P.ws       = v         ],
+  ['it',   'vit',   v => P.iter     = Math.round(v), true ],
+  ['es',   'ves',   v => P.esc      = v         ],
+  ['zm',   'vzm',   v => P.zoom     = v         ],
+  ['hue',  'vhue',  v => P.hue      = v         ],
+  ['laz',  'vlaz',  v => P.laz      = v         ],
+  ['lel',  'vlel',  v => P.lel      = v         ],
+  ['dfoc', 'vdfoc', v => P.dofFocus = v         ],
+  ['dblr', 'vdblr', v => P.dofBlur  = v         ]
+];
+
+SLIDERS.forEach(([id, vid, fn, isInt]) => {
+  const el = document.getElementById(id);
+  const ve = document.getElementById(vid);
+  if (!el) return;
+  el.addEventListener('input', () => {
+    const v = parseFloat(el.value);
+    fn(v);
+    if (ve) ve.textContent = isInt ? Math.round(v) : v.toFixed(2);
+  });
+});
+
+// ── PRESETS ───────────────────────────────────────────────────────────────
+function ap(cr, ci, cj, ck) {
+  P.cr = cr; P.ci = ci; P.cj = cj; P.ck = ck;
+  [['cr', cr], ['ci', ci], ['cj', cj], ['ck', ck]].forEach(([id, v]) => {
+    document.getElementById(id).value = v;
+    document.getElementById('v' + id).textContent = v.toFixed(3);
+  });
+}
+
+</script>
+</body>
+</html>
