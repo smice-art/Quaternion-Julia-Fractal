@@ -1,3 +1,6 @@
+<p align="center">
+  <img src="images/various1.jpg" alt="polytopes width="100%">
+</p>
 # Quaternion-Julia-Fractal
 
 # The Project
