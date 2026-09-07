@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="images/various1.jpg" alt="polytopes width="100%">
+  <img src="images/various2.jpg" alt="quaternion width="100%">
 </p>
 # Quaternion-Julia-Fractal
 
