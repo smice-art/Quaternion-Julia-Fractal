@@ -1,6 +1,7 @@
 <p align="center">
   <img src="images/various2.jpg" alt="quaternion width="100%">
 </p>
+
 # Quaternion-Julia-Fractal
 
 # The Project
